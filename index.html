@@ -1,0 +1,79 @@
+<html>
+    <head>
+            <style>
+                    #messages{
+                        width: 95%;
+                        max-width: 400px;
+                        height: 350px;
+                        overflow-y: scroll;
+                        border: 1px solid #eee;
+                        box-shadow: 0px 0px 20px #ccc inset;
+            
+                    }
+                    .message{
+                        margin: 20px;
+                        padding: 5px;
+                        border-radius: 5px;
+                        border: 1px solid #ccc;
+                        background: white;
+                    }
+                </style>
+    </head>
+  <body>
+    <p id='server-time'></p>
+    
+    <div id="messages"></div>
+
+    <form onSubmit="return addMessage(this);">
+        <input id="nickname" type="text" placeholder="Nickname"/>           
+        <textarea name="message" id="message" cols="30" rows="10"placeholder="Escribe un mensaje" onkeyup="line(event, this);"></textarea>
+        <input type="submit" value="Enviar"/>
+    </form>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var el = document.getElementById('server-time');
+        socket.on('time', function(timeString) {
+        el.innerHTML = 'Server time: ' + timeString;
+        });
+
+        socket.on('messages', function(data){
+        console.log(data);
+        render(data);
+        });
+        function line(e, textarea){
+            var code = (e.keyCode ? e.keyCode : e.wich);
+            if(code == 13){
+                //alert('apretó ENTER ENVIAR algo');
+                addMessage(e);
+            }
+
+        }
+        function render(data){
+            var html = data.map(function(message, index){
+            return(`
+            <div class="message">
+                <strong>${message.nickname}</strong>
+                <span>${message.text}</span>
+            </div>
+            `);
+            }).join(' ');
+            var div_msgs= document.getElementById('messages');
+            div_msgs.innerHTML = html;
+            div_msgs.scrollTop = div_msgs.scrollHeight;
+        }
+        function addMessage(e){
+            var message = {
+                nickname: document.getElementById('nickname').value,
+                text: document.getElementById('message').value
+            };
+            document.getElementById('message').value = '';
+            document.getElementById('nickname').style.display = 'none';
+            console.log(message);
+            socket.emit('add-message', message);
+            return false;
+        }
+    </script>
+  </body>
+</html>
